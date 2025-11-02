@@ -1,0 +1,78 @@
+mkdir -p .github/workflows
+cat > .github/workflows/create-tasks.yml <<'EOF'
+name: 批量创建 Sputik 任务 Issues
+on:
+  workflow_dispatch:   # 手动触发（网页点 Run）
+
+jobs:
+  create-issues:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write     # 必须声明写 Issues 权限
+    steps:
+      - name: 创建所有任务 Issues
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const tasks = [
+              // ==== Init ====
+              {title: '[Init] 解析命令行参数和初始数据结构', labels: ['init','core'], body: '**Phase**: Init\n**Difficulty**: Easy\n**Goal**: 命令行解析。\n**AC**:\n- [ ] `./sputik -f LiberationMono-12` 正常启动。'},
+              {title: '[Init] 初始化 X11 环境和窗口创建', labels: ['init','x11'], body: '**Phase**: Init\n**Difficulty**: Medium\n**Goal**: X11 连接 + 窗口创建。\n**AC**:\n- [ ] `XCreateWindow` 成功，窗口可见。'},
+              {title: '[Init] 设置默认 shell 和 TTY 通道', labels: ['init','tty'], body: '**Phase**: Init\n**Difficulty**: Easy\n**Goal**: 启动默认 shell。\n**AC**:\n- [ ] `ttynew()` 成功，shell 交互正常。'},
+              {title: '[Init] 初始化选择机制和事件准备', labels: ['init','select'], body: '**Phase**: Init\n**Difficulty**: Easy\n**Goal**: 剪贴板结构初始化。\n**AC**:\n- [ ] `selinit()` 完成。'},
+
+              // ==== Window ====
+              {title: '[Window] 连接 X11 并加载字体/颜色', labels: ['window','x11'], body: '**Phase**: Window\n**Difficulty**: Medium\n**Goal**: 加载字体 + 颜色表。\n**AC**:\n- [ ] `xloadfonts()`、`xloadcols()` 成功。'},
+              {title: '[Window] 配置窗口属性和输入法支持', labels: ['window','ui'], body: '**Phase**: Window\n**Difficulty**: Medium\n**Goal**: 窗口属性、IME。\n**AC**:\n- [ ] 窗口可 resize，中文输入正常。'},
+              {title: '[Window] 初始化绘图上下文和鼠标游标', labels: ['window','render'], body: '**Phase**: Window\n**Difficulty**: Easy\n**Goal**: GC、游标。\n**AC**:\n- [ ] 绘图上下文创建完成。'},
+
+              // ==== Loop ====
+              {title: '[Loop] 监听 X11/TTY 事件和输入', labels: ['loop','events'], body: '**Phase**: Loop\n**Difficulty**: Medium\n**Goal**: 主循环事件监听。\n**AC**:\n- [ ] 键盘/鼠标事件被捕获。'},
+              {title: '[Loop] 处理事件触发和屏幕重绘', labels: ['loop','redraw'], body: '**Phase**: Loop\n**Difficulty**: Medium\n**Goal**: 触发 `draw()`。\n**AC**:\n- [ ] 输入后立即刷新。'},
+              {title: '[Loop] 优化延迟渲染和闪烁机制', labels: ['loop','perf'], body: '**Phase**: Loop\n**Difficulty**: Hard\n**Goal**: 2ms~33ms 延迟。\n**AC**:\n- [ ] 帧率 > 30fps，内存 < 10MB。'},
+
+              // ==== Render ====
+              {title: '[Render] 遍历行文本生成 glyph 规格', labels: ['render','glyph'], body: '**Phase**: Render\n**Difficulty**: Medium\n**Goal**: `xmakeglyphfontspecs()`。\n**AC**:\n- [ ] 每行生成正确 glyph 列表。'},
+              {title: '[Render] 处理字符字体/颜色/样式', labels: ['render','style'], body: '**Phase**: Render\n**Difficulty**: Medium\n**Goal**: 粗体、颜色、删除线。\n**AC**:\n- [ ] 样式渲染无误。'},
+              {title: '[Render] 绘制光标和清理边框', labels: ['render','cursor'], body: '**Phase**: Render\n**Difficulty**: Easy\n**Goal**: 光标 + 边框清理。\n**AC**:\n- [ ] 光标闪烁正常。'},
+              {title: '[Render] 缓冲区复制到窗口（优化内存）', labels: ['render','perf'], body: '**Phase**: Render\n**Difficulty**: Hard\n**Goal**: 零拷贝或最小拷贝。\n**AC**:\n- [ ] 渲染后内存占用稳定。'},
+
+              // ==== Input ====
+              {title: '[Input] 捕获键盘事件和快捷键匹配', labels: ['input','keyboard'], body: '**Phase**: Input\n**Difficulty**: Medium\n**Goal**: `kpress()`。\n**AC**:\n- [ ] `Ctrl+Shift+C` 复制。'},
+              {title: '[Input] 处理鼠标事件和选择操作', labels: ['input','mouse'], body: '**Phase**: Input\n**Difficulty**: Medium\n**Goal**: `bpress()`、`bmotion()`。\n**AC**:\n- [ ] 拖选高亮。'},
+              {title: '[Input] 支持输入法和特殊键序列', labels: ['input','ime'], body: '**Phase**: Input\n**Difficulty**: Hard\n**Goal**: 多字节、方向键。\n**AC**:\n- [ ] 中文输入完整。'},
+
+              // ==== TTY ====
+              {title: '[TTY] 创建 TTY 并启动 shell/命令', labels: ['tty','io'], body: '**Phase**: TTY\n**Difficulty**: Easy\n**Goal**: `ttynew()`。\n**AC**:\n- [ ] `sh` 启动。'},
+              {title: '[TTY] 读取/写入 TTY 数据更新缓冲', labels: ['tty','buffer'], body: '**Phase**: TTY\n**Difficulty**: Medium\n**Goal**: `ttyread()`、`ttywrite()`。\n**AC**:\n- [ ] 输出实时显示。'},
+              {title: '[TTY] 调整大小和特殊模式设置', labels: ['tty','resize'], body: '**Phase**: TTY\n**Difficulty**: Easy\n**Goal**: `ttyresize()`。\n**AC**:\n- [ ] 窗口调整后行列同步。'},
+
+              // ==== Select ====
+              {title: '[Select] 记录选择范围和矩形模式', labels: ['select','clipboard'], body: '**Phase**: Select\n**Difficulty**: Medium\n**Goal**: 矩形选择。\n**AC**:\n- [ ] `Alt+拖动` 矩形选。'},
+              {title: '[Select] 复制/粘贴到剪贴板', labels: ['select','copy'], body: '**Phase**: Select\n**Difficulty**: Easy\n**Goal**: `clipcopy()`、`clippaste()`。\n**AC**:\n- [ ] 中键粘贴。'},
+              {title: '[Select] 处理 X11 剪贴板事件', labels: ['select','x11'], body: '**Phase**: Select\n**Difficulty**: Medium\n**Goal**: X11 事件同步。\n**AC**:\n- [ ] 跨应用复制粘贴。'},
+
+              // ==== State ====
+              {title: '[State] 处理窗口事件（如 resize/focus）', labels: ['state','window'], body: '**Phase**: State\n**Difficulty**: Medium\n**Goal**: `XConfigureEvent`。\n**AC**:\n- [ ] 失去焦点时光标隐藏。'},
+              {title: '[State] 设置标题和紧急通知', labels: ['state','notify'], body: '**Phase**: State\n**Difficulty**: Easy\n**Goal**: 窗口标题、铃声。\n**AC**:\n- [ ] 未聚焦时响铃。'},
+              {title: '[State] 支持屏幕保护和模式切换', labels: ['state','mode'], body: '**Phase**: State\n**Difficulty**: Medium\n**Goal**: 反显、闪烁模式。\n**AC**:\n- [ ] `DECSCNM` 切换正常。'},
+
+              // ==== LLM ====
+              {title: '[LLM] 集成键值数据库日志记录', labels: ['llm','db'], body: '**Phase**: LLM\n**Difficulty**: Medium\n**Goal**: 使用 `sled` 或 `rocksdb` 存 LLM 输出。\n**AC**:\n- [ ] 每次生成写入 DB。'},
+              {title: '[LLM] 实现联网模型实时搜索接口', labels: ['llm','network'], body: '**Phase**: LLM\n**Difficulty**: Hard\n**Goal**: 调用 OpenAI/Groq/Claude API。\n**AC**:\n- [ ] `/search 关键词` 返回结果。'},
+              {title: '[LLM] 通过 LLM 生成内容并注入终端', labels: ['llm','generate'], body: '**Phase**: LLM\n**Difficulty**: Medium\n**Goal**: 生成文本 → `ttywrite()`。\n**AC**:\n- [ ] 终端显示 AI 回复。'},
+              {title: '[LLM] NASM 硬件抽象和寄存器操作（FFI hook）', labels: ['llm','hardware','nasm'], body: '**Phase**: LLM\n**Difficulty**: Hard\n**Goal**: NASM 注入 `in/out`、`syscall`。\n**AC**:\n- [ ] `LLM: read CR3` 成功。'},
+              {title: '[LLM] 用户/LLM 操作硬件测试（e.g., syscall 注入）', labels: ['llm','test'], body: '**Phase**: LLM\n**Difficulty**: Hard\n**Goal**: 注入 `getpid`、`mmap`。\n**AC**:\n- [ ] LLM 可触发 `fork` 并观察 PID。'}
+            ];
+
+            for (const task of tasks) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: task.title,
+                body: task.body,
+                labels: task.labels
+              });
+            }
+            console.log(`Created ${tasks.length} issues!`);
+EOF
