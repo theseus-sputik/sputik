@@ -1,5 +1,3 @@
-mkdir -p .github/workflows
-cat > .github/workflows/create-tasks.yml <<'EOF'
 name: 批量创建 Sputik 任务 Issues
 on:
   workflow_dispatch:   # 手动触发（网页点 Run）
